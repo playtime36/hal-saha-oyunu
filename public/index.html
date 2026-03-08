@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProStriker - Online Multiplayer Football</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --secondary: #ff00c8;
+            --accent: #39ff14;
+            --bg: #0a0a0c;
+            --surface: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0c 100%);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            image-rendering: pixelated;
+        }
+
+        /* Overlay UI */
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-card {
+            background: var(--surface);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .score-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .score-value {
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary);
+        }
+
+        .timer {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+
+        /* Menus */
+        #menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.3s ease;
+        }
+
+        .menu-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+            font-size: 42px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #00d2ff);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 242, 255, 0.3);
+        }
+
+        .vfx-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .hidden {
+            display: none !important;
+            opacity: 0;
+        }
+
+        /* Lobby Specific Styles */
+        .team-column {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 280px;
+        }
+
+        .team-title {
+            font-size: 18px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .slots-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 350px;
+        }
+
+        .player-slot {
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            text-align: left;
+            border-left: 4px solid var(--primary);
+            transition: all 0.2s;
+        }
+
+        .player-slot.empty {
+            opacity: 0.35;
+            border-left: 4px solid transparent;
+            border: 1px dashed var(--border);
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 400;
+        }
+
+        .lobby-info {
+            flex: 0.8;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            padding: 0 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container">
+        <!-- Main Game Canvas -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- VFX Layer (for particles, glow, etc.) -->
+        <canvas id="vfx-canvas" class="vfx-layer"></canvas>
+
+        <!-- HUD -->
+        <div id="ui-overlay" class="hidden">
+            <div class="hud-card">
+                <div class="score-box">
+                    <span id="score-team-1" class="score-value">0</span>
+                    <span>:</span>
+                    <span id="score-team-2" class="score-value">0</span>
+                </div>
+            </div>
+            <div class="hud-card">
+                <div id="game-timer" class="timer">02:00</div>
+            </div>
+        </div>
+
+        <!-- Menu Overlay -->
+        <div id="menu-overlay">
+            <div class="menu-content" id="main-menu">
+                <h1>ProStriker</h1>
+                <input type="text" id="player-name" placeholder="Oyuncu Adı..." maxlength="12">
+
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                    <button id="show-create-btn" class="btn btn-primary">Oda Kur</button>
+                    <button id="show-join-btn" class="btn"
+                        style="background: rgba(255,255,255,0.1); color: white;">Odaya Katıl</button>
+                </div>
+
+                <p style="margin-top: 25px; color: rgba(255,255,255,0.4); font-size: 13px;">
+                    Profesyonel Halı Saha Deneyimi v8.0
+                </p>
+            </div>
+
+            <!-- Join Room Screen -->
+            <div class="menu-content hidden" id="join-menu">
+                <h1 style="font-size: 32px;">Odaya Katıl</h1>
+                <input type="text" id="join-room-code" placeholder="Oda Kodunu Girin..." maxlength="6"
+                    style="text-align: center; font-weight: 800; letter-spacing: 4px; text-transform: uppercase;">
+                <button id="confirm-join-btn" class="btn btn-primary">Katıl</button>
+                <button id="back-to-main-2" class="btn"
+                    style="margin-top: 10px; background: transparent; color: rgba(255,255,255,0.5);">Geri Dön</button>
+            </div>
+
+            <!-- Professional Lobby Screen -->
+            <div class="menu-content hidden" id="lobby-menu" style="max-width: 1000px; width: 95%;">
+                <h1 style="font-size: 36px;">MAÇ LOBİSİ</h1>
+                <p style="color: var(--accent); font-weight: 800; letter-spacing: 2px;">ODA KODU: <span
+                        id="lobby-code">-</span></p>
+
+                <div style="display: flex; justify-content: space-between; gap: 30px; margin-top: 30px; width: 100%;">
+                    <!-- Team 1 -->
+                    <div class="team-column">
+                        <div class="team-title" style="color: var(--primary);">TAKIM 1 (MAVİ)</div>
+                        <div id="team-1-slots" class="slots-container"></div>
+                        <button id="join-team-1" class="btn btn-primary">TAKIMA KATIL</button>
+                    </div>
+
+                    <!-- Center Info -->
+                    <div class="lobby-info">
+                        <div style="text-align: center;">
+                            <p style="font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 5px;">Maksimum 7vs7
+                            </p>
+                            <p style="font-size: 20px; font-weight: 600;">Hazır Mısın?</p>
+                        </div>
+                        <button id="start-match-btn" class="btn btn-primary"
+                            style="padding: 20px; font-size: 22px;">MAÇI BAŞLAT</button>
+                        <button onclick="location.reload()" class="btn"
+                            style="background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; font-size: 14px;">ODADAN
+                            ÇIK</button>
+                    </div>
+
+                    <!-- Team 2 -->
+                    <div class="team-column">
+                        <div class="team-title" style="color: var(--secondary);">TAKIM 2 (PEMBE)</div>
+                        <div id="team-2-slots" class="slots-container" style="align-items: flex-end;"></div>
+                        <button id="join-team-2" class="btn"
+                            style="background: linear-gradient(135deg, var(--secondary), #ff0055); color: white;">TAKIMA
+                            KATIL</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ESC / Pause Menu -->
+            <div class="menu-content hidden" id="esc-menu">
+                <h1 style="font-size: 32px;">Oyun Durduruldu</h1>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                    <button id="resume-btn" class="btn btn-primary">Oynamaya Devam Et</button>
+                    <button id="quit-btn" class="btn" style="background: #ff4d4d; color: white;">Ana Ekrana Dön</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.io Library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Game Client Scripts -->
+    <script src="game.js"></script>
+</body>
+
+</html>
