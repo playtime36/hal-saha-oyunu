@@ -69,6 +69,22 @@ const ctx = canvas.getContext('2d');
 const vfxCanvas = document.getElementById('vfx-canvas');
 const vfxCtx = vfxCanvas.getContext('2d');
 
+// POLYFILL: Ensure rounded rects work on all browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+        return this;
+    };
+}
+
 // MOBILE CONTROLS UI
 const mobileControls = document.getElementById('mobile-controls');
 const joyBase = document.getElementById('joystick-base');
@@ -318,6 +334,8 @@ canvas.addEventListener('mousemove', (e) => {
     }
 });
 
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
 canvas.addEventListener('mousedown', (e) => {
     if (document.pointerLockElement !== canvas && menuOverlay.classList.contains('hidden') && !('ontouchstart' in window)) {
         canvas.requestPointerLock();
@@ -546,13 +564,27 @@ function render() {
             }
             ctx.shadowBlur = 0;
 
-            // Power Bar
+            // Power Bar (Optimized & More Visible)
             if (id === myId && charge.active) {
-                const bW = 80 * scale, bH = 6 * scale;
-                ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                ctx.roundRect(px - bW / 2, py - 65 * scale, bW, bH, 3 * scale); ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.roundRect(px - bW / 2, py - 65 * scale, bW * Math.min(1, (Date.now() - charge.start) / 1000), bH, 3 * scale); ctx.fill();
+                const bW = 80 * scale, bH = 8 * scale;
+                const bx = px - bW / 2;
+                const by = py - 70 * scale;
+                const progress = Math.min(1, (Date.now() - charge.start) / 1000);
+
+                ctx.save();
+                // Bar Background
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1 * scale;
+                ctx.roundRect(bx, by, bW, bH, 4 * scale); ctx.fill(); ctx.stroke();
+
+                // Bar Progress
+                const grad = ctx.createLinearGradient(bx, 0, bx + bW, 0);
+                grad.addColorStop(0, '#fff');
+                grad.addColorStop(1, teamColor);
+                ctx.fillStyle = grad;
+                ctx.roundRect(bx, by, bW * progress, bH, 4 * scale); ctx.fill();
+                ctx.restore();
             }
         }
 
