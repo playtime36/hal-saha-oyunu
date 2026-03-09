@@ -33,6 +33,7 @@ let inputState = { up: false, down: false, left: false, right: false };
 let netWobble = { left: 0, right: 0 };
 let mousePos = { x: 650, y: 450 };
 let charge = { active: false, type: null, start: 0, val: 0 };
+let lastLobbyStateToken = "";
 
 // UI ELEMENTS
 const menuOverlay = document.getElementById('menu-overlay');
@@ -113,6 +114,12 @@ socket.on('notification', d => showNotification(d.message));
 
 function updateLobbyUI(state) {
     if (menuOverlay.classList.contains('hidden')) return;
+
+    // PREVENT FLICKER: High performance diffing
+    const currentStateToken = JSON.stringify(Object.values(state.players).map(p => ({ id: p.id, t: p.team, n: p.name })));
+    if (currentStateToken === lastLobbyStateToken) return;
+    lastLobbyStateToken = currentStateToken;
+
     mainMenu.classList.add('hidden');
     joinMenu.classList.add('hidden');
     lobbyMenu.classList.remove('hidden');
@@ -460,60 +467,61 @@ function render() {
             }
         }
 
-        // --- 5. PROCEDURAL REALISTIC SOCCER BALL ---
+        // --- 5. ULTRA-REALISTIC PROCEDURAL BALL v2.0 ---
         const bx = gameState.ball.x * scale, by = gameState.ball.y * scale, br = 15 * scale;
 
         ctx.save();
         ctx.translate(bx, by);
 
-        // Dynamic Drop Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.beginPath(); ctx.arc(4 * scale, 4 * scale, br, 0, Math.PI * 2); ctx.fill();
+        // 1. Dynamic Drop Shadow (Blurred)
+        ctx.shadowBlur = 10 * scale; ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath(); ctx.arc(4 * scale, 6 * scale, br, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
 
-        // Roll Rotation logic
-        const rollSpeed = (gameState.ball.vx + gameState.ball.vy) * 0.05;
+        // 2. Roll Rotation Calculation
+        const rollSpeed = (gameState.ball.vx + gameState.ball.vy) * 0.04;
         const ballRot = (Date.now() * 0.002) + rollSpeed;
         ctx.rotate(ballRot);
 
-        // Ball Base (3D Sphere Gradient)
-        const ballGrad = ctx.createRadialGradient(-br * 0.3, -br * 0.3, br * 0.1, 0, 0, br);
-        ballGrad.addColorStop(0, '#ffffff'); // Light point
-        ballGrad.addColorStop(0.7, '#f0f0f0');
-        ballGrad.addColorStop(1, '#cccccc'); // Edge shadow
+        // 3. 3D Sphere Base (Material Gradient)
+        const ballGrad = ctx.createRadialGradient(-br * 0.35, -br * 0.35, br * 0.1, 0, 0, br);
+        ballGrad.addColorStop(0, '#ffffff');
+        ballGrad.addColorStop(0.6, '#f8f8f8');
+        ballGrad.addColorStop(0.9, '#dddddd');
+        ballGrad.addColorStop(1, '#aaaaaa');
         ctx.fillStyle = ballGrad;
         ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
 
-        // Realistic Pentagon/Hexagon Pattern (Procedural)
-        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-        ctx.lineWidth = 1 * scale;
+        // 4. Geodesic Panel Pattern (Wrapped Distortion)
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.lineWidth = 0.8 * scale;
+        ctx.fillStyle = '#1a1a1a'; // Black panel color
 
-        // Draw 6 surrounding pentagons
         for (let i = 0; i < 6; i++) {
             ctx.save();
             ctx.rotate((i * Math.PI * 2) / 6);
-            ctx.translate(br * 0.65, 0);
 
-            ctx.fillStyle = '#111'; // Black panels
+            // Distort panels towards edges to look spherical
+            const edgePush = br * 0.68;
+            ctx.translate(edgePush, 0);
+
             ctx.beginPath();
             for (let j = 0; j < 5; j++) {
                 const a = (j * Math.PI * 2) / 5;
-                const r = br * 0.35;
-                ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+                const r = br * 0.38;
+                // Skue panels at edges
+                const sx = Math.cos(a) * r * 0.7;
+                const sy = Math.sin(a) * r;
+                ctx.lineTo(sx, sy);
             }
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
             ctx.restore();
-
-            // Draw connecting lines for hexagons
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            const lineAngle = (i * Math.PI * 2) / 6 + Math.PI / 6;
-            ctx.lineTo(Math.cos(lineAngle) * br, Math.sin(lineAngle) * br);
-            ctx.stroke();
         }
 
-        // Center Pentagon
+        // 5. Center Feature
         ctx.fillStyle = '#111';
         ctx.beginPath();
         for (let j = 0; j < 5; j++) {
@@ -523,9 +531,16 @@ function render() {
         ctx.closePath();
         ctx.fill(); ctx.stroke();
 
-        // Final Shine Overlay for 3D realism
-        const shineGrad = ctx.createRadialGradient(-br * 0.4, -br * 0.4, 0, -br * 0.4, -br * 0.4, br * 0.8);
-        shineGrad.addColorStop(0, 'rgba(255,255,255,0.4)');
+        // 6. Fresnel Effect / Rim Light
+        const rimGrad = ctx.createRadialGradient(0, 0, br * 0.85, 0, 0, br);
+        rimGrad.addColorStop(0, 'rgba(255,255,255,0)');
+        rimGrad.addColorStop(1, 'rgba(255,255,255,0.2)');
+        ctx.fillStyle = rimGrad;
+        ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
+
+        // 7. High-Intensity Specular Highlights
+        const shineGrad = ctx.createRadialGradient(-br * 0.45, -br * 0.45, 0, -br * 0.45, -br * 0.45, br * 0.4);
+        shineGrad.addColorStop(0, 'rgba(255,255,255,0.7)');
         shineGrad.addColorStop(1, 'rgba(255,255,255,0)');
         ctx.fillStyle = shineGrad;
         ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
