@@ -112,6 +112,58 @@ socket.on('notification', d => showNotification(d.message));
 
 // --- UI LOGIC ---
 
+function drawLobbyMinimap(players) {
+    const miniCanvas = document.getElementById('lobby-minimap');
+    if (!miniCanvas) return;
+    const mCtx = miniCanvas.getContext('2d');
+
+    const rect = miniCanvas.parentElement.getBoundingClientRect();
+    if (rect.width === 0) return;
+    miniCanvas.width = rect.width;
+    miniCanvas.height = rect.height;
+
+    const mW = miniCanvas.width;
+    const mH = miniCanvas.height;
+    const scale = mW / 1300;
+    const scaleY = mH / 900;
+
+    mCtx.fillStyle = '#1b4d1b';
+    mCtx.fillRect(0, 0, mW, mH);
+
+    mCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+    mCtx.lineWidth = 1;
+    mCtx.strokeRect(5, 5, mW - 10, mH - 10);
+    mCtx.beginPath();
+    mCtx.moveTo(mW / 2, 5); mCtx.lineTo(mW / 2, mH - 5);
+    mCtx.stroke();
+    mCtx.beginPath();
+    mCtx.arc(mW / 2, mH / 2, 25 * scale, 0, Math.PI * 2);
+    mCtx.stroke();
+
+    const f1 = [{ x: 100, y: 450 }, { x: 350, y: 250 }, { x: 350, y: 650 }, { x: 600, y: 350 }, { x: 600, y: 550 }];
+    const f2 = [{ x: 1200, y: 450 }, { x: 950, y: 250 }, { x: 950, y: 650 }, { x: 700, y: 350 }, { x: 700, y: 550 }];
+
+    const p1 = Object.values(players).filter(p => p.team === 1);
+    const p2 = Object.values(players).filter(p => p.team === 2);
+
+    p1.forEach((p, i) => {
+        if (i < 5) {
+            mCtx.fillStyle = '#00f2ff';
+            mCtx.shadowBlur = 8; mCtx.shadowColor = '#00f2ff';
+            mCtx.beginPath(); mCtx.arc(f1[i].x * scale, f1[i].y * scaleY, 5, 0, Math.PI * 2); mCtx.fill();
+            mCtx.shadowBlur = 0;
+        }
+    });
+    p2.forEach((p, i) => {
+        if (i < 5) {
+            mCtx.fillStyle = '#ff00c8';
+            mCtx.shadowBlur = 8; mCtx.shadowColor = '#ff00c8';
+            mCtx.beginPath(); mCtx.arc(f2[i].x * scale, f2[i].y * scaleY, 5, 0, Math.PI * 2); mCtx.fill();
+            mCtx.shadowBlur = 0;
+        }
+    });
+}
+
 function updateLobbyUI(state) {
     if (menuOverlay.classList.contains('hidden')) return;
 
@@ -139,6 +191,7 @@ function updateLobbyUI(state) {
         team2Slots.innerHTML += `<div class="player-slot ${p ? '' : 'empty'}">${p ? p.name : 'Boş Slot'}</div>`;
     }
     startMatchBtn.classList.toggle('hidden', state.hostId !== myId);
+    drawLobbyMinimap(state.players);
 }
 
 function hideMenus() {
