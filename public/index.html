@@ -32,6 +32,10 @@
             user-select: none;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         body {
             background-color: var(--bg);
             color: var(--text);
@@ -272,8 +276,31 @@
 
         .lobby-main {
             display: flex;
-            gap: 30px;
+            gap: 20px;
             align-items: flex-start;
+        }
+
+        @media (max-width: 900px) {
+            .lobby-main {
+                flex-direction: column;
+                overflow-y: auto;
+                max-height: 80vh;
+                padding-bottom: 20px;
+            }
+
+            .menu-content.lobby-content {
+                padding: 30px;
+                width: 98%;
+            }
+
+            .team-column {
+                width: 100%;
+            }
+
+            .lobby-info {
+                width: 100%;
+                order: 3;
+            }
         }
 
         .team-column {
