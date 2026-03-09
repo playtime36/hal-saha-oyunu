@@ -564,26 +564,50 @@ function render() {
             }
             ctx.shadowBlur = 0;
 
-            // Power Bar (Optimized & More Visible)
+            // Enhanced Power Bar (Dynamic Polish)
             if (id === myId && charge.active) {
-                const bW = 80 * scale, bH = 8 * scale;
-                const bx = px - bW / 2;
-                const by = py - 70 * scale;
+                const bW = 100 * scale, bH = 12 * scale;
                 const progress = Math.min(1, (Date.now() - charge.start) / 1000);
 
-                ctx.save();
-                // Bar Background
-                ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 1 * scale;
-                ctx.roundRect(bx, by, bW, bH, 4 * scale); ctx.fill(); ctx.stroke();
+                // Shake effect: increases as it gets fuller
+                const shake = progress * 4 * scale;
+                const sx = (Math.random() - 0.5) * shake;
+                const sy = (Math.random() - 0.5) * shake;
 
-                // Bar Progress
+                const bx = px - bW / 2 + sx;
+                const by = py - 85 * scale + sy;
+
+                ctx.save();
+
+                // Outer Glow (Pulse)
+                ctx.shadowBlur = 15 * scale * progress;
+                ctx.shadowColor = progress > 0.8 ? '#ff3300' : teamColor;
+
+                // Main Container
+                ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2 * scale;
+                ctx.roundRect(bx, by, bW, bH, 6 * scale);
+                ctx.fill();
+                ctx.stroke();
+
+                // Filling Progress with "Heat" Gradient
                 const grad = ctx.createLinearGradient(bx, 0, bx + bW, 0);
                 grad.addColorStop(0, '#fff');
-                grad.addColorStop(1, teamColor);
+                grad.addColorStop(0.5, teamColor);
+                grad.addColorStop(1, '#ff3300'); // Heat effect at max
+
                 ctx.fillStyle = grad;
-                ctx.roundRect(bx, by, bW * progress, bH, 4 * scale); ctx.fill();
+                // Draw clipped progress
+                ctx.beginPath();
+                ctx.roundRect(bx, by, bW * progress, bH, 6 * scale);
+                ctx.fill();
+
+                // White "Shine" Highlight
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(bx, by, bW * progress, bH / 3);
+
                 ctx.restore();
             }
         }
