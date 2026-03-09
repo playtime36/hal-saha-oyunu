@@ -132,13 +132,32 @@ function drawLobbyMinimap(players) {
 
     mCtx.strokeStyle = 'rgba(255,255,255,0.2)';
     mCtx.lineWidth = 1;
+
+    // Side Lines
     mCtx.strokeRect(5, 5, mW - 10, mH - 10);
+
+    // Center Line
     mCtx.beginPath();
     mCtx.moveTo(mW / 2, 5); mCtx.lineTo(mW / 2, mH - 5);
     mCtx.stroke();
+
+    // Center Circle
     mCtx.beginPath();
     mCtx.arc(mW / 2, mH / 2, 25 * scale, 0, Math.PI * 2);
     mCtx.stroke();
+
+    // Goals (Left & Right)
+    mCtx.strokeStyle = 'rgba(255,255,255,0.6)';
+    mCtx.lineWidth = 2;
+    // Left Goal
+    mCtx.strokeRect(5 - 5, (mH / 2) - (125 * scaleY), 5, 250 * scaleY);
+    // Right Goal
+    mCtx.strokeRect(mW - 5, (mH / 2) - (125 * scaleY), 5, 250 * scaleY);
+
+    // Penalty Areas (Visual only)
+    mCtx.strokeStyle = 'rgba(255,255,255,0.1)';
+    mCtx.strokeRect(5, (mH / 2) - (200 * scaleY), 100 * scale, 400 * scaleY);
+    mCtx.strokeRect(mW - 100 * scale - 5, (mH / 2) - (200 * scaleY), 100 * scale, 400 * scaleY);
 
     const f1 = [{ x: 100, y: 450 }, { x: 350, y: 250 }, { x: 350, y: 650 }, { x: 600, y: 350 }, { x: 600, y: 550 }];
     const f2 = [{ x: 1200, y: 450 }, { x: 950, y: 250 }, { x: 950, y: 650 }, { x: 700, y: 350 }, { x: 700, y: 550 }];
