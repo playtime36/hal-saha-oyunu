@@ -28,6 +28,9 @@ let netWobble = { left: 0, right: 0 };
 let mousePos = { x: 650, y: 450 };
 let charge = { active: false, type: null, start: 0, val: 0 };
 
+const ballImg = new Image();
+ballImg.src = 'assets/ball.png';
+
 // UI ELEMENTS
 const menuOverlay = document.getElementById('menu-overlay');
 const mainMenu = document.getElementById('main-menu');
@@ -397,127 +400,89 @@ function render() {
             const teamColor = p.team === 1 ? '#00f2ff' : '#ff00c8';
             const jerseyColor = p.team === 1 ? '#0077ff' : '#9900aa';
 
-            // 1. Dynamic Shadow (Human Shape)
+            // 1. Dynamic Drop Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.beginPath();
-            ctx.ellipse(px + 6 * scale, py + 8 * scale, 28 * scale, 14 * scale, 0, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.ellipse(px + 4 * scale, py + 8 * scale, 24 * scale, 10 * scale, 0, 0, Math.PI * 2); ctx.fill();
 
+            // 2. Neon Halo (Outer Glow)
             ctx.save();
             ctx.translate(px, py);
-            ctx.rotate(p.angle || 0);
 
-            // 2. Play Body (Shoulders/Jersey)
-            ctx.shadowBlur = 15 * scale; ctx.shadowColor = teamColor;
-            ctx.fillStyle = jerseyColor;
-            // Draw a rounded rectangle-like shape for shoulders
-            ctx.beginPath();
-            ctx.roundRect(-22 * scale, -14 * scale, 44 * scale, 28 * scale, 8 * scale);
-            ctx.fill();
+            ctx.shadowBlur = 20 * scale; ctx.shadowColor = teamColor;
+            ctx.strokeStyle = teamColor;
+            ctx.lineWidth = 3 * scale;
+            ctx.beginPath(); ctx.arc(0, 0, 24 * scale, 0, Math.PI * 2); ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // Jersey Detail (V-neck/Stripes)
-            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-            ctx.lineWidth = 2 * scale;
-            ctx.beginPath(); ctx.moveTo(-22 * scale, 0); ctx.lineTo(22 * scale, 0); ctx.stroke();
+            // 3. Inner Circle (Jersey Gradient)
+            const pGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 22 * scale);
+            pGrad.addColorStop(0, teamColor);
+            pGrad.addColorStop(1, jerseyColor);
+            ctx.fillStyle = pGrad;
+            ctx.beginPath(); ctx.arc(0, 0, 22 * scale, 0, Math.PI * 2); ctx.fill();
 
-            // 3. Arms (Sleeves + Hands)
-            ctx.fillStyle = '#ffdbac'; // Base skin tone
-            // Left Arm
-            ctx.beginPath(); ctx.arc(-22 * scale, -6 * scale, 6 * scale, 0, Math.PI * 2); ctx.fill();
-            // Right Arm
-            ctx.beginPath(); ctx.arc(-22 * scale, 6 * scale, 6 * scale, 0, Math.PI * 2); ctx.fill();
+            // 4. Center Dot (Visual Focus)
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.beginPath(); ctx.arc(0, 0, 6 * scale, 0, Math.PI * 2); ctx.fill();
 
-            // 4. Head
-            // Hair/Helmet
-            ctx.fillStyle = '#222';
-            ctx.beginPath(); ctx.arc(0, 0, 11 * scale, 0, Math.PI * 2); ctx.fill();
-            // Face
-            ctx.fillStyle = '#ffdbac';
-            ctx.beginPath(); ctx.arc(4 * scale, 0, 9 * scale, 0, Math.PI * 2); ctx.fill();
-
-            // 5. Possession Aura
+            // 5. Possession Indicator
             if (gameState.ball.possessor === id) {
                 ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 3 * scale;
-                ctx.setLineDash([5 * scale, 5 * scale]);
-                ctx.beginPath(); ctx.arc(0, 0, 35 * scale, 0, Math.PI * 2); ctx.stroke();
+                ctx.lineWidth = 2 * scale;
+                ctx.setLineDash([4 * scale, 4 * scale]);
+                ctx.beginPath(); ctx.arc(0, 0, 32 * scale, 0, Math.PI * 2); ctx.stroke();
                 ctx.setLineDash([]);
             }
-
             ctx.restore();
 
-            // Player Name (Premium)
+            // Player Name
             ctx.fillStyle = '#fff';
             ctx.font = `bold ${15 * scale}px Outfit`;
             ctx.textAlign = 'center';
             ctx.shadowBlur = 4 * scale; ctx.shadowColor = '#000';
-            ctx.fillText(p.name.toUpperCase(), px, py - 50 * scale);
+            ctx.fillText(p.name.toUpperCase(), px, py - 45 * scale);
             ctx.shadowBlur = 0;
 
             // Power Bar
             if (id === myId && charge.active) {
                 const bW = 80 * scale, bH = 6 * scale;
                 ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                ctx.roundRect(px - bW / 2, py - 75 * scale, bW, bH, 3 * scale); ctx.fill();
+                ctx.roundRect(px - bW / 2, py - 65 * scale, bW, bH, 3 * scale); ctx.fill();
                 ctx.fillStyle = '#fff';
-                ctx.roundRect(px - bW / 2, py - 75 * scale, bW * Math.min(1, (Date.now() - charge.start) / 1000), bH, 3 * scale); ctx.fill();
+                ctx.roundRect(px - bW / 2, py - 65 * scale, bW * Math.min(1, (Date.now() - charge.start) / 1000), bH, 3 * scale); ctx.fill();
             }
         }
 
-        // --- 5. HIGH-FIDELITY SOCCER BALL ---
+        // --- 5. ULTRA-REALISTIC IMAGE BALL ---
         const bx = gameState.ball.x * scale, by = gameState.ball.y * scale, br = 15 * scale;
+
+        ctx.save();
+        ctx.translate(bx, by);
 
         // Dynamic Drop Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.beginPath(); ctx.arc(bx + 4 * scale, by + 4 * scale, br, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(4 * scale, 4 * scale, br, 0, Math.PI * 2); ctx.fill();
 
-        // Ball Base (3D Gradient)
-        const ballGrad = ctx.createRadialGradient(bx - br * 0.3, by - br * 0.3, br * 0.1, bx, by, br);
-        ballGrad.addColorStop(0, '#fff');
-        ballGrad.addColorStop(0.8, '#ccc');
-        ballGrad.addColorStop(1, '#999');
-
-        ctx.fillStyle = ballGrad;
-        ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
-
-        // Tiling Pattern (Hexagons/Pentagons)
-        ctx.save();
-        ctx.translate(bx, by);
-        const ballRot = Date.now() * 0.003;
+        // Rotate the texture based on ball position/time for "rolling" effect
+        const rollAmount = (gameState.ball.vx + gameState.ball.vy) * 0.1;
+        const ballRot = (Date.now() * 0.003) + rollAmount;
         ctx.rotate(ballRot);
 
-        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-        ctx.lineWidth = 1 * scale;
-        ctx.fillStyle = '#111';
-
-        for (let i = 0; i < 6; i++) {
-            const angle = (i * Math.PI * 2) / 6;
-            ctx.save();
-            ctx.rotate(angle);
-
-            // Draw a pentagon shape
-            ctx.beginPath();
-            for (let j = 0; j < 5; j++) {
-                const a2 = (j * Math.PI * 2) / 5;
-                const r2 = br * 0.45;
-                const px = Math.cos(a2) * r2 + br * 0.6;
-                const py = Math.sin(a2) * r2;
-                ctx.lineTo(px, py);
-            }
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
+        if (ballImg.complete) {
+            ctx.drawImage(ballImg, -br, -br, br * 2, br * 2);
+        } else {
+            // Fallback while loading
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
         }
-        // Center Pentagon
-        ctx.beginPath();
-        for (let j = 0; j < 5; j++) {
-            const a2 = (j * Math.PI * 2) / 5 - Math.PI / 2;
-            ctx.lineTo(Math.cos(a2) * br * 0.4, Math.sin(a2) * br * 0.4);
-        }
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
+
+        // Sublayer Shading for depth
+        const depthGrad = ctx.createRadialGradient(-br * 0.2, -br * 0.2, 0, 0, 0, br);
+        depthGrad.addColorStop(0, 'rgba(255,255,255,0.1)');
+        depthGrad.addColorStop(1, 'rgba(0,0,0,0.2)');
+        ctx.fillStyle = depthGrad;
+        ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
+
         ctx.restore();
 
         // Mouse Cursor (Mobile/PC Friendly)
