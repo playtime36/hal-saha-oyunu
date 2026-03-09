@@ -12,8 +12,8 @@
         :root {
             --primary: #00f2ff;
             --primary-glow: rgba(0, 242, 255, 0.5);
-            --secondary: #ff00c8;
-            --secondary-glow: rgba(255, 0, 200, 0.5);
+            --secondary: #ff0000;
+            --secondary-glow: rgba(255, 0, 0, 0.4);
             --accent: #39ff14;
             --bg: #050507;
             --surface: rgba(255, 255, 255, 0.03);
@@ -349,6 +349,18 @@
             box-shadow: 0 20px 40px var(--secondary-glow);
         }
 
+        .captain-tag-1 {
+            color: var(--primary);
+            font-weight: 900;
+            margin-left: 4px;
+        }
+
+        .captain-tag-2 {
+            color: var(--secondary);
+            font-weight: 900;
+            margin-left: 4px;
+        }
+
         .slots-container {
             display: flex;
             flex-direction: column;
@@ -631,7 +643,7 @@
 
                     <!-- Team 2 -->
                     <div class="team-column team-pink">
-                        <div class="team-title" style="color: var(--secondary)">Pembe Takım</div>
+                        <div class="team-title" style="color: var(--secondary)">Kırmızı Takım</div>
                         <div class="slots-container" id="team-2-slots">
                             <!-- Slots will be injected here -->
                         </div>

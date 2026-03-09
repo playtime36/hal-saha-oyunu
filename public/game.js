@@ -175,8 +175,8 @@ function drawLobbyMinimap(players) {
     });
     p2.forEach((p, i) => {
         if (i < 5) {
-            mCtx.fillStyle = '#ff00c8';
-            mCtx.shadowBlur = 8; mCtx.shadowColor = '#ff00c8';
+            mCtx.fillStyle = '#ff0000'; // Red
+            mCtx.shadowBlur = 8; mCtx.shadowColor = '#ff0000';
             mCtx.beginPath(); mCtx.arc(f2[i].x * scale, f2[i].y * scaleY, 5, 0, Math.PI * 2); mCtx.fill();
             mCtx.shadowBlur = 0;
         }
@@ -200,7 +200,7 @@ function updateLobbyUI(state) {
     const p1 = Object.values(state.players).filter(p => p.team === 1);
     for (let i = 0; i < 5; i++) {
         const p = p1[i];
-        const captainTag = p && p.isCaptain ? ' <span style="font-weight:900; color:var(--accent); margin-left:4px;">(C)</span>' : '';
+        const captainTag = p && p.isCaptain ? ' <span class="captain-tag-1">(C)</span>' : '';
         team1Slots.innerHTML += `<div class="player-slot ${p ? '' : 'empty'}">${p ? p.name + captainTag : 'Boş Slot'}</div>`;
     }
 
@@ -208,7 +208,7 @@ function updateLobbyUI(state) {
     const p2 = Object.values(state.players).filter(p => p.team === 2);
     for (let i = 0; i < 5; i++) {
         const p = p2[i];
-        const captainTag = p && p.isCaptain ? ' <span style="font-weight:900; color:var(--accent); margin-left:4px;">(C)</span>' : '';
+        const captainTag = p && p.isCaptain ? ' <span class="captain-tag-2">(C)</span>' : '';
         team2Slots.innerHTML += `<div class="player-slot ${p ? '' : 'empty'}">${p ? p.name + captainTag : 'Boş Slot'}</div>`;
     }
     startMatchBtn.classList.toggle('hidden', state.hostId !== myId);
@@ -485,8 +485,8 @@ function render() {
 
         for (const id in gameState.players) {
             const p = gameState.players[id], px = p.x * scale, py = p.y * scale;
-            const teamColor = p.team === 1 ? '#00f2ff' : '#ff00c8';
-            const jerseyColor = p.team === 1 ? '#0077ff' : '#9900aa';
+            const teamColor = p.team === 1 ? '#00f2ff' : '#ff0000'; // RED for team 2
+            const jerseyColor = p.team === 1 ? '#0077ff' : '#aa0000'; // Dark RED
 
             // 1. Dynamic Drop Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -528,8 +528,22 @@ function render() {
             ctx.font = `bold ${15 * scale}px Outfit`;
             ctx.textAlign = 'center';
             ctx.shadowBlur = 4 * scale; ctx.shadowColor = '#000';
-            const displayName = p.isCaptain ? `(C) ${p.name}` : p.name;
-            ctx.fillText(displayName.toUpperCase(), px, py - 45 * scale);
+
+            // Captain (C) color matches team
+            if (p.isCaptain) {
+                const captainLabel = "(C) ";
+                const nameLabel = p.name.toUpperCase();
+                ctx.fillStyle = teamColor;
+                const capWidth = ctx.measureText(captainLabel).width;
+                const nameWidth = ctx.measureText(nameLabel).width;
+                const totalWidth = capWidth + nameWidth;
+
+                ctx.fillText(captainLabel, px - totalWidth / 2 + capWidth / 2, py - 45 * scale);
+                ctx.fillStyle = '#fff';
+                ctx.fillText(nameLabel, px - totalWidth / 2 + capWidth + nameWidth / 2, py - 45 * scale);
+            } else {
+                ctx.fillText(p.name.toUpperCase(), px, py - 45 * scale);
+            }
             ctx.shadowBlur = 0;
 
             // Power Bar
