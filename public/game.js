@@ -13,6 +13,12 @@ const PLAYABLE_HEIGHT = 800;
 const BALL_RADIUS = 15;
 const PLAYER_RADIUS = 24;
 
+// LOAD PERSISTED NAME
+const savedName = localStorage.getItem('prostriker_player_name');
+if (savedName && document.getElementById('player-name')) {
+    document.getElementById('player-name').value = savedName;
+}
+
 // STATE
 let myId = null;
 let currentRoomCode = null;
@@ -27,9 +33,6 @@ let inputState = { up: false, down: false, left: false, right: false };
 let netWobble = { left: 0, right: 0 };
 let mousePos = { x: 650, y: 450 };
 let charge = { active: false, type: null, start: 0, val: 0 };
-
-const ballImg = new Image();
-ballImg.src = 'assets/ball.png';
 
 // UI ELEMENTS
 const menuOverlay = document.getElementById('menu-overlay');
@@ -153,8 +156,10 @@ function showNotification(text) {
 // --- EVENT LISTENERS ---
 
 showCreateBtn.addEventListener('click', () => {
+    const name = playerNameInput.value || 'Oyuncu';
+    localStorage.setItem('prostriker_player_name', name);
     amIHost = true;
-    socket.emit('autoCreateRoom', playerNameInput.value || 'Oyuncu');
+    socket.emit('autoCreateRoom', name);
 });
 
 showJoinBtn.addEventListener('click', () => {
@@ -163,8 +168,10 @@ showJoinBtn.addEventListener('click', () => {
 });
 
 confirmJoinBtn.addEventListener('click', () => {
+    const name = playerNameInput.value || 'Oyuncu';
+    localStorage.setItem('prostriker_player_name', name);
     amIHost = false;
-    socket.emit('joinRoom', { code: joinRoomCode.value.toUpperCase(), name: playerNameInput.value || 'Oyuncu' });
+    socket.emit('joinRoom', { code: joinRoomCode.value.toUpperCase(), name });
 });
 
 backToMain2.addEventListener('click', () => {
@@ -453,7 +460,7 @@ function render() {
             }
         }
 
-        // --- 5. ULTRA-REALISTIC IMAGE BALL ---
+        // --- 5. PROCEDURAL REALISTIC SOCCER BALL ---
         const bx = gameState.ball.x * scale, by = gameState.ball.y * scale, br = 15 * scale;
 
         ctx.save();
@@ -463,24 +470,64 @@ function render() {
         ctx.fillStyle = 'rgba(0,0,0,0.4)';
         ctx.beginPath(); ctx.arc(4 * scale, 4 * scale, br, 0, Math.PI * 2); ctx.fill();
 
-        // Rotate the texture based on ball position/time for "rolling" effect
-        const rollAmount = (gameState.ball.vx + gameState.ball.vy) * 0.1;
-        const ballRot = (Date.now() * 0.003) + rollAmount;
+        // Roll Rotation logic
+        const rollSpeed = (gameState.ball.vx + gameState.ball.vy) * 0.05;
+        const ballRot = (Date.now() * 0.002) + rollSpeed;
         ctx.rotate(ballRot);
 
-        if (ballImg.complete) {
-            ctx.drawImage(ballImg, -br, -br, br * 2, br * 2);
-        } else {
-            // Fallback while loading
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
+        // Ball Base (3D Sphere Gradient)
+        const ballGrad = ctx.createRadialGradient(-br * 0.3, -br * 0.3, br * 0.1, 0, 0, br);
+        ballGrad.addColorStop(0, '#ffffff'); // Light point
+        ballGrad.addColorStop(0.7, '#f0f0f0');
+        ballGrad.addColorStop(1, '#cccccc'); // Edge shadow
+        ctx.fillStyle = ballGrad;
+        ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
+
+        // Realistic Pentagon/Hexagon Pattern (Procedural)
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 1 * scale;
+
+        // Draw 6 surrounding pentagons
+        for (let i = 0; i < 6; i++) {
+            ctx.save();
+            ctx.rotate((i * Math.PI * 2) / 6);
+            ctx.translate(br * 0.65, 0);
+
+            ctx.fillStyle = '#111'; // Black panels
+            ctx.beginPath();
+            for (let j = 0; j < 5; j++) {
+                const a = (j * Math.PI * 2) / 5;
+                const r = br * 0.35;
+                ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // Draw connecting lines for hexagons
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            const lineAngle = (i * Math.PI * 2) / 6 + Math.PI / 6;
+            ctx.lineTo(Math.cos(lineAngle) * br, Math.sin(lineAngle) * br);
+            ctx.stroke();
         }
 
-        // Sublayer Shading for depth
-        const depthGrad = ctx.createRadialGradient(-br * 0.2, -br * 0.2, 0, 0, 0, br);
-        depthGrad.addColorStop(0, 'rgba(255,255,255,0.1)');
-        depthGrad.addColorStop(1, 'rgba(0,0,0,0.2)');
-        ctx.fillStyle = depthGrad;
+        // Center Pentagon
+        ctx.fillStyle = '#111';
+        ctx.beginPath();
+        for (let j = 0; j < 5; j++) {
+            const a = (j * Math.PI * 2) / 5 - Math.PI / 2;
+            ctx.lineTo(Math.cos(a) * br * 0.35, Math.sin(a) * br * 0.35);
+        }
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Final Shine Overlay for 3D realism
+        const shineGrad = ctx.createRadialGradient(-br * 0.4, -br * 0.4, 0, -br * 0.4, -br * 0.4, br * 0.8);
+        shineGrad.addColorStop(0, 'rgba(255,255,255,0.4)');
+        shineGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = shineGrad;
         ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
 
         ctx.restore();
