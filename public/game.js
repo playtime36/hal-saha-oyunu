@@ -127,14 +127,14 @@ function updateLobbyUI(state) {
 
     team1Slots.innerHTML = '';
     const p1 = Object.values(state.players).filter(p => p.team === 1);
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 5; i++) {
         const p = p1[i];
         team1Slots.innerHTML += `<div class="player-slot ${p ? '' : 'empty'}">${p ? p.name : 'Boş Slot'}</div>`;
     }
 
     team2Slots.innerHTML = '';
     const p2 = Object.values(state.players).filter(p => p.team === 2);
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 5; i++) {
         const p = p2[i];
         team2Slots.innerHTML += `<div class="player-slot ${p ? '' : 'empty'}">${p ? p.name : 'Boş Slot'}</div>`;
     }

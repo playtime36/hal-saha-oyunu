@@ -217,7 +217,7 @@ io.on('connection', (socket) => {
         if (!rooms[code]) return socket.emit('notification', { message: 'Geçersiz Oda Kodu!' });
 
         const playerCount = Object.keys(rooms[code].players).length;
-        if (playerCount >= 14) return socket.emit('notification', { message: 'Oda Dolu! (Max 7vs7)' });
+        if (playerCount >= 10) return socket.emit('notification', { message: 'Oda Dolu! (Max 5vs5)' });
 
         joinPlayerToRoom(socket, code, name);
     });
@@ -249,7 +249,7 @@ io.on('connection', (socket) => {
         if (!gameState.isLobby) return;
 
         const teamPlayers = Object.values(gameState.players).filter(p => p.team === team);
-        if (teamPlayers.length >= 7) return socket.emit('notification', { message: 'Bu takım dolu!' });
+        if (teamPlayers.length >= 5) return socket.emit('notification', { message: 'Bu takım dolu!' });
 
         if (gameState.players[socket.id]) {
             gameState.players[socket.id].team = team;
