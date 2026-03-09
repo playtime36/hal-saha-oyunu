@@ -230,16 +230,20 @@ io.on('connection', (socket) => {
         const teams = Object.values(gameState.players).reduce((acc, p) => { acc[p.team]++; return acc; }, { 1: 0, 2: 0 });
         const team = teams[1] <= teams[2] ? 1 : 2;
 
+        const teamCaptains = Object.values(gameState.players).filter(p => p.team === team && p.isCaptain);
+        const isCaptain = teamCaptains.length === 0;
+
         gameState.players[socket.id] = {
             id: socket.id, name: name || 'Oyuncu', team,
             x: team === 1 ? 250 : 1050, y: 450,
             inputs: { up: false, down: false, left: false, right: false },
-            angle: 0
+            angle: 0,
+            isCaptain: isCaptain
         };
 
         socket.emit('init', { id: socket.id, gameState, roomCode: code });
         io.to(code).emit('gameUpdate', gameState);
-        console.log(`Player ${name} joined room ${code}`);
+        console.log(`Player ${name} joined room ${code} (Captain: ${isCaptain})`);
     }
 
     socket.on('switchTeam', (team) => {
@@ -251,9 +255,25 @@ io.on('connection', (socket) => {
         const teamPlayers = Object.values(gameState.players).filter(p => p.team === team);
         if (teamPlayers.length >= 5) return socket.emit('notification', { message: 'Bu takım dolu!' });
 
-        if (gameState.players[socket.id]) {
-            gameState.players[socket.id].team = team;
-            gameState.players[socket.id].x = team === 1 ? 250 : 1050;
+        const oldPlayer = gameState.players[socket.id];
+        if (oldPlayer) {
+            const oldTeam = oldPlayer.team;
+            const wasCaptain = oldPlayer.isCaptain;
+
+            oldPlayer.team = team;
+            oldPlayer.x = team === 1 ? 250 : 1050;
+
+            // If left old team as captain, assign new one
+            if (wasCaptain) {
+                const remaining = Object.values(gameState.players).filter(p => p.team === oldTeam && p.id !== socket.id);
+                if (remaining.length > 0) remaining[0].isCaptain = true;
+                oldPlayer.isCaptain = false;
+            }
+
+            // Check if new team needs a captain
+            const newCaptains = Object.values(gameState.players).filter(p => p.team === team && p.id !== socket.id && p.isCaptain);
+            if (newCaptains.length === 0) oldPlayer.isCaptain = true;
+
             io.to(code).emit('gameUpdate', gameState);
         }
     });
@@ -306,10 +326,19 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const code = playerToRoom[socket.id];
         if (code && rooms[code]) {
+            const p = rooms[code].players[socket.id];
+            const wasCaptain = p ? p.isCaptain : false;
+            const team = p ? p.team : null;
+
             delete rooms[code].players[socket.id];
+
             if (Object.keys(rooms[code].players).length === 0) {
                 delete rooms[code];
                 console.log(`Room ${code} closed (empty)`);
+            } else if (wasCaptain && team) {
+                const remaining = Object.values(rooms[code].players).filter(p => p.team === team);
+                if (remaining.length > 0) remaining[0].isCaptain = true;
+                io.to(code).emit('gameUpdate', rooms[code]);
             }
         }
         delete playerToRoom[socket.id];

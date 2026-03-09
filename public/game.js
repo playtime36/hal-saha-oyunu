@@ -187,7 +187,7 @@ function updateLobbyUI(state) {
     if (menuOverlay.classList.contains('hidden')) return;
 
     // PREVENT FLICKER: High performance diffing
-    const currentStateToken = JSON.stringify(Object.values(state.players).map(p => ({ id: p.id, t: p.team, n: p.name })));
+    const currentStateToken = JSON.stringify(Object.values(state.players).map(p => ({ id: p.id, t: p.team, n: p.name, c: p.isCaptain })));
     if (currentStateToken === lastLobbyStateToken) return;
     lastLobbyStateToken = currentStateToken;
 
@@ -200,14 +200,16 @@ function updateLobbyUI(state) {
     const p1 = Object.values(state.players).filter(p => p.team === 1);
     for (let i = 0; i < 5; i++) {
         const p = p1[i];
-        team1Slots.innerHTML += `<div class="player-slot ${p ? '' : 'empty'}">${p ? p.name : 'Boş Slot'}</div>`;
+        const captainTag = p && p.isCaptain ? ' <span style="font-size:12px">👑</span>' : '';
+        team1Slots.innerHTML += `<div class="player-slot ${p ? '' : 'empty'}">${p ? p.name + captainTag : 'Boş Slot'}</div>`;
     }
 
     team2Slots.innerHTML = '';
     const p2 = Object.values(state.players).filter(p => p.team === 2);
     for (let i = 0; i < 5; i++) {
         const p = p2[i];
-        team2Slots.innerHTML += `<div class="player-slot ${p ? '' : 'empty'}">${p ? p.name : 'Boş Slot'}</div>`;
+        const captainTag = p && p.isCaptain ? ' <span style="font-size:12px">👑</span>' : '';
+        team2Slots.innerHTML += `<div class="player-slot ${p ? '' : 'empty'}">${p ? p.name + captainTag : 'Boş Slot'}</div>`;
     }
     startMatchBtn.classList.toggle('hidden', state.hostId !== myId);
     drawLobbyMinimap(state.players);
@@ -526,7 +528,8 @@ function render() {
             ctx.font = `bold ${15 * scale}px Outfit`;
             ctx.textAlign = 'center';
             ctx.shadowBlur = 4 * scale; ctx.shadowColor = '#000';
-            ctx.fillText(p.name.toUpperCase(), px, py - 45 * scale);
+            const displayName = p.isCaptain ? `👑 ${p.name}` : p.name;
+            ctx.fillText(displayName.toUpperCase(), px, py - 45 * scale);
             ctx.shadowBlur = 0;
 
             // Power Bar
