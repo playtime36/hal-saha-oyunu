@@ -195,7 +195,7 @@ setInterval(() => {
         }
         io.to(code).emit('gameUpdate', gameState);
     }
-}, 1000 / 120);
+}, 1000 / 60);
 
 io.on('connection', (socket) => {
     socket.on('autoCreateRoom', (name) => {
